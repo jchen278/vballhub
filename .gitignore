@@ -1,0 +1,19 @@
+﻿# Dependencies & virtual environments
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Next.js build output
+.next/
+out/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# OS & editor files
+.DS_Store
+Thumbs.db
