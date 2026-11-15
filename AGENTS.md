@@ -21,13 +21,30 @@
 ## Domain Rules & Invariants
 1. **Domain Enums & Skill Normalization:**
    - Store each event division with both the organizer's `display_label` (e.g., `Open`, `AA+`, `A-`, `Upper Intermediate`) and a normalized `skill_score` (`0`–`100` integer derived from the ordered division list on the poster, adjustable in admin review).
+   - **Event Types:** `tournament`, `league`, `drop_in` (top-level filter allowing players to isolate or view all). Multi-week leagues store `start_date`, `end_date`, and `day_of_week` (e.g., `"Tuesdays"`) to present cleanly without duplicating event entries.
    - **Surfaces:** `indoor`, `beach`, `grass`
    - **Formats:** `coed_6s`, `mens`, `womens`, `R4s`, `R2s`
+   - **Registration Statuses:** `upcoming`, `open`, `waitlist`, `sold_out` (avoid live spot counts that go stale).
+   - **Organizer Filter:** Support filtering events by organizer name/entity.
    - **Post-MVP Player Profiles:** Keep player `skill_level` mutable (organizers frequently re-tier players), and model post-event difficulty feedback as `harder`, `as_expected`, or `easier`.
-2. **Moderation State Machine:** All public submissions and AI poster extractions MUST enter PostgreSQL with `status = 'pending'`. Never write directly to `published` without admin Auth0 RBAC verification.
-3. **Venue Normalization:** Never auto-create rows in the `Venue` table from scraped or AI-extracted text. Match against existing canonical Vancouver venue IDs or flag as unverified for admin geocoding.
-4. **Nullable AI Fields:** Keep `price`, `end_time`, and `registration_deadline` nullable in Pydantic/Zod schemas so Gemini does not hallucinate missing poster details.
-5. **Media Storage:** Never persist expiring social media CDN URLs; upload poster bytes to object storage (Cloudflare R2/S3) or pass directly in memory.
+2. **Event-to-Division Data Model (1-to-Many):**
+   - Model `Event` (the overarching tournament, league, or drop-in: title, event type, organizer, date/recurrence, venue, registration link, registration_opens_at, registration_status, poster) separately from `EventDivision` (display_label, skill_score, format, price). A single weekend tournament offering multiple tiers (e.g., Men's Open, Co-Ed AA, Co-Ed B) MUST be stored as one event with multiple divisions, avoiding duplicate map pins and calendar spam.
+3. **Timezone & Localization:**
+   - Use the IANA timezone name `America/Vancouver` as the default configuration constant (never hardcode `"PDT"` or `"PST"`), handling daylight saving time transitions automatically and simplifying future multi-city expansion.
+4. **Moderation State Machine:** All public submissions and AI poster extractions MUST enter PostgreSQL with `status = 'pending'`. Never write directly to `published` without admin Auth0 RBAC verification.
+5. **Venue Normalization & Pre-Seeding:**
+   - Never auto-create rows in the `Venue` table from scraped or AI-extracted text. Match against existing canonical Vancouver venue IDs or flag as unverified for admin geocoding.
+   - Pre-seed the `Venue` lookup table upfront with 15–20 major Metro Vancouver gyms and beach courts (e.g., Kitsilano Beach, Spanish Banks, UBC War Memorial / SRC, Richmond Olympic Oval, Bonsor, Creekside, Pinetree, Harry Jerome) with verified latitude/longitude.
+6. **Nullable AI Fields:** Keep `price`, `end_time`, `registration_opens_at`, and `registration_deadline` nullable in Pydantic/Zod schemas so Gemini does not hallucinate missing poster details.
+7. **Media Storage:** Never persist expiring social media CDN URLs; upload poster bytes to object storage (Cloudflare R2/S3) or pass directly in memory.
+8. **UI, Styling & Mobile-First Conventions:**
+   - **Mobile-First UX:** Layouts, filter bars, event cards, and `.ics` export buttons must be optimized for mobile screens (majority traffic arrives via Instagram, WhatsApp, Discord links).
+   - **Default Landing View:** Default to **List View** for fast mobile scrolling, with a sticky top bar to switch seamlessly between `List | Calendar | Map`.
+   - **Theme & Color Vibe:** Light-mode-first athletic/editorial aesthetic with high-contrast white and slate cards ensuring poster art and court badges pop (no theme switcher for MVP).
+   - **Accent Color & Visual Badges:** Color-coded pills for fast visual scanning:
+     - *Surface:* `Indoor` (blue), `Beach` (amber/sand), `Grass` (green)
+     - *Registration Status:* `Open` (emerald), `Opening Soon` (sky), `Waitlist` (yellow), `Sold Out` (muted gray)
+   - **Component Library:** Tailwind CSS + **shadcn/ui** and **Lucide icons** for consistent buttons, modals, filter chips, and admin review drawers without custom CSS overhead.
 
 ## Repository Structure
 ```text

@@ -3,7 +3,7 @@
 A centralized database for local recreational volleyball tournaments, leagues and drop ins in Vancouver. Users can browse synchronized list, calendar, and venue map views—and export individual events to their calendar—while organizers submit events for admin review.
 
 ## Key Features
-- **Multi-View Discovery:** Browse and filter events by surface (indoor/beach/grass), format (coed 6s/mens/womens/R4s/R2s), and registration status—with full organizer division labels displayed—across synchronized list, calendar grid, and interactive map views.
+- **Multi-View Discovery:** Browse and filter events by event type (tournament/league/drop-in), surface (indoor/beach/grass), format (coed 6s/mens/womens/R4s/R2s), organizer, and registration status—with full organizer division labels displayed—across synchronized list, calendar grid, and interactive map views.
 - **One-Click Calendar Export:** Download an `.ics` file for any specific tournament or league you decide to join.
 - **AI-Assisted Poster Extraction:** Python FastAPI service using the Gemini multimodal API + Pydantic validation to parse uploaded tournament poster images into structured event fields.
 - **Human-in-the-Loop Moderation:** Public organizer submission form routed into an Auth0 RBAC-protected admin review queue before publishing.
