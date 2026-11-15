@@ -29,6 +29,39 @@
 4. **Nullable AI Fields:** Keep `price`, `end_time`, and `registration_deadline` nullable in Pydantic/Zod schemas so Gemini does not hallucinate missing poster details.
 5. **Media Storage:** Never persist expiring social media CDN URLs; upload poster bytes to object storage (Cloudflare R2/S3) or pass directly in memory.
 
+## Repository Structure
+```text
+vballhub/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                 # Automated linting & tests on push/PR
+├── apps/
+│   └── web/                       # Next.js Frontend (deployed to Vercel)
+│       ├── prisma/
+│       │   └── schema.prisma      # PostgreSQL tables (Venue, Event, Division, Submission)
+│       ├── src/
+│       │   ├── app/               # Public pages, /admin review queue, /submit form
+│       │   ├── components/        # Synchronized List, Calendar, Leaflet/MapLibre Map, Filters
+│       │   └── lib/               # Auth0 helpers, Zod schemas, .ics generator, DB client
+│       ├── .env.local             # Local secrets (ignored by Git)
+│       └── package.json
+├── services/
+│   └── ingest/                    # Python FastAPI Service (deployed to Render)
+│       ├── app/
+│       │   ├── main.py            # GET /health and POST /extract/poster endpoints
+│       │   ├── schemas.py         # Pydantic models (display_label, skill_score, nullable fields)
+│       │   ├── extractor.py       # Gemini Vision multimodal poster parser
+│       │   └── scrapers/          # (Post-MVP) Eventbrite, Meetup, organizer scrapers
+│       ├── tests/                 # pytest unit & endpoint tests
+│       ├── Dockerfile             # Production container build for Render
+│       ├── .env                   # Gemini API key (ignored by Git)
+│       └── requirements.txt
+├── .gitignore                     # Ignores node_modules, .venv, .next, .env*
+├── docker-compose.yml             # Local multi-service development environment
+├── AGENTS.md                      # Architectural rules and context for AI coding agents
+└── README.md                      # Human project & portfolio documentation
+```
+
 ## Guardrails
 - Never read, log, or commit `.env*` files or API secrets.
 - Never run destructive database resets (`prisma migrate reset`, `DROP`, `TRUNCATE`) against non-local environments.

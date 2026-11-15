@@ -16,11 +16,12 @@ A centralized database for local recreational volleyball tournaments, leagues an
 - **Auth & Automation:** Auth0 (RBAC), GitHub Actions CI/CD & Cron, Docker
 
 ## Repository Structure
+```text
 ├── apps/web/          # Next.js frontend, public UI, .ics export, Auth0 admin queue
 ├── services/ingest/   # Python FastAPI poster OCR extraction & scheduled scrapers
 ├── docker-compose.yml # Local multi-service development environment
 └── AGENTS.md          # Architectural rules and context for AI coding agents
-
+```
 ## Roadmap (Post-MVP)
 - **Player Profiles & Post-Event Difficulty Feedback:** Optional player accounts to log attended tournaments/leagues, maintain a mutable self-declared skill level (adjustable as players improve or get moved between divisions by organizers), and rate past events as harder, same level, or easier than expected.
 - **Verified Attendance Sync & Player Discovery:** Automatically sync verified tournament participation to player profiles and enable opt-in player/sub discovery by normalized skill tier and format.
