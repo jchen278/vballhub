@@ -17,3 +17,6 @@ out/
 # OS & editor files
 .DS_Store
 Thumbs.db
+
+#gemini
+.gemini/
