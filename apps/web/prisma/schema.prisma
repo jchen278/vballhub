@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Enums ---
+
+enum EventType {
+  tournament
+  league
+  drop_in
+}
+
+enum Surface {
+  indoor
+  beach
+  grass
+}
+
+enum TeamSize {
+  sixes @map("6s")
+  fours @map("4s")
+  twos  @map("2s")
+  other
+}
+
+enum Format {
+  coed
+  mens
+  womens
+  reverse_coed
+  other
+}
+
+enum PriceUnit {
+  per_team
+  per_player
+}
+
+enum RegistrationStatus {
+  upcoming
+  open
+  waitlist
+  sold_out
+}
+
+enum SubmissionStatus {
+  pending
+  published
+  expired
+}
+
+// --- Core Tables ---
+
+model Venue {
+  id           String       @id @default(cuid())
+  name         String       @unique // Canonical name, e.g., "Kitsilano Beach"
+  address      String
+  neighborhood String?      // e.g., "Kitsilano", "UBC", "Richmond"
+  latitude     Float
+  longitude    Float
+  surface      Surface?     // Primary surface if venue-specific
+  events       Event[]
+  submissions  Submission[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Event {
+  id                   String             @id @default(cuid())
+  title                String
+  description          String?
+  organizerName        String?
+  eventType            EventType
+  surface              Surface
+  registrationStatus   RegistrationStatus @default(upcoming)
+  registrationUrl      String?
+  registrationOpensAt  DateTime?
+  registrationDeadline DateTime?
+
+  // Schedule fields (handles one-off tournaments & recurring multi-week leagues)
+  startDate            DateTime
+  endDate              DateTime
+  startTime            String?            // e.g., "09:00" in America/Vancouver
+  endTime              String?            // Nullable per AGENTS.md rule
+  dayOfWeek            String?            // e.g., "Tuesday" for recurring leagues
+
+  posterUrl            String?            // Stored in S3/R2, never expiring IG links
+  venueId              String
+  venue                Venue              @relation(fields: [venueId], references: [id])
+  divisions            EventDivision[]
+
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([startDate, endDate])
+  @@index([eventType, surface, registrationStatus])
+}
+
+model EventDivision {
+  id           String     @id @default(cuid())
+  eventId      String
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  displayLabel String     // Exact organizer text: "Open Hybrid R4s/R2s", "AA+", "Upper Int"
+  skillScore   Int        // 0-100 normalized score (adjustable in admin queue)
+  teamSize     TeamSize   // 6s, 4s, 2s, other
+  format       Format     // coed, mens, womens, reverse_coed, other
+  price        Float?     // Nullable so AI never hallucinates missing prices
+  priceUnit    PriceUnit? // per_team vs per_player
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Submission {
+  id                 String           @id @default(cuid())
+  status             SubmissionStatus @default(pending) // Always starts pending
+
+  // Raw or AI-extracted payload awaiting admin review
+  title              String
+  organizerName      String?
+  contactEmail       String?
+  eventType          EventType?
+  surface            Surface?
+  startDate          DateTime?
+  endDate            DateTime?
+  registrationUrl    String?
+  rawPayloadJson     Json?            // Full Gemini/form JSON before normalization
+  posterUrl          String?
+
+  // Venue matching (either matched to canonical ID or flagged with raw text)
+  venueId            String?
+  venue              Venue?           @relation(fields: [venueId], references: [id])
+  unverifiedVenueRaw String?          // Admin geocodes/maps this before approving
+
+  adminNotes         String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([status])
+}
